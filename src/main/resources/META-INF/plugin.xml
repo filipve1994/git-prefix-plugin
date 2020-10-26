@@ -1,0 +1,63 @@
+<idea-plugin>
+    <id>be.filip.git-prefix-plugin</id>
+    <name>Git Auto Prefix Filip</name>
+    <version>1.0.0</version>
+    <vendor url="https://github.com/filipve1994/idea-commit-prefix-plugin.git">Filip Vanden Eynde</vendor>
+
+    <description><![CDATA[
+        <p>
+          Automatically set the jira issue key (of the current branch name) as prefix for the commit message<br>
+          It's possible to choose your own delimiter between the issue key and commit message
+        </p>
+
+        <table cellspacing="5">
+            <tr>
+                <th>Branch Name</th>
+                <th>Commit prefix</th>
+            </tr>
+            <tr>
+                <td>master</td>
+                <td><em>no action</em></td>
+            </tr>
+            <tr>
+                <td>bugfix/ABC-1234-app-not-working</td>
+                <td>ABC-1234:</td>
+            </tr>
+            <tr>
+                <td>feature/ABC-1234-app-not-working</td>
+                <td>ABC-1234:</td>
+            </tr>
+            <tr>
+                <td>release/ABC-1234-app-not-working</td>
+                <td>ABC-1234:</td>
+            </tr>
+            <tr>
+                <td>someOtherType/ABC-1234-app-not-working</td>
+                <td>ABC-1234:</td>
+            </tr>
+            <tr>
+                <td>ABC-1234-app-not-working</td>
+                <td>ABC-1234:</td>
+            </tr>
+            <tr>
+                <td>ABC-1234</td>
+                <td>ABC-1234:</td>
+            </tr>
+        </table>
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <vcsCheckinHandlerFactory implementation="be.filip.intellij.GitBaseCheckinHandlerFactory" />
+        <applicationConfigurable groupId="tools" instance="be.filip.intellij.settings.PluginSettingsConfigurable"></applicationConfigurable>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
