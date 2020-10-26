@@ -1,9 +1,36 @@
+<!-- https://jetbrains.org/intellij/sdk/docs/basics/plugin_structure/plugin_configuration_file.html -->
+
+<!-- `url` specifies the URL of the plugin homepage (can be opened from "Plugins" settings dialog) -->
+<!-- <idea-plugin url="https://www.jetbrains.com/idea"> -->
 <idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN.
+     It cannot be changed between the plugin versions.
+     If not specified, <name> will be used (not recommended). -->
     <id>be.filip.git-prefix-plugin</id>
+    <!-- Plugin name. It should be short and descriptive and in Title Case.
+     Displayed in the "Plugins" settings dialog and the plugin repository Web interface. -->
     <name>Git Auto Prefix Filip</name>
+    <!-- Plugin version
+     Recommended format is BRANCH.BUILD.FIX (MAJOR.MINOR.FIX)
+     Displayed in the "Plugins" settings dialog and the plugin repository Web interface.  -->
     <version>1.0.0</version>
+    <!-- The vendor of the plugin.
+     The optional "url" attribute specifies the URL of the vendor homepage.
+     The optional "email" attribute specifies the e-mail address of the vendor.
+     Displayed in the "Plugins" settings dialog and the plugin repository Web interface. -->
     <vendor url="https://github.com/filipve1994/idea-commit-prefix-plugin.git">Filip Vanden Eynde</vendor>
 
+    <!-- Description of the plugin.
+      Should be short and to the point.
+      Start the description with a verb in a present simple form such as
+      "integrates", "synchronizes", "adds support for" or "lets you view".
+      Don't use marketing adjectives like "simple", "lightweight", or "professional".
+      Don't repeat the name of the plugin.
+      For plugins that add language/platform/framework support, the description MUST specify
+      the version of the corresponding language/platform/framework.
+      Don't mention the IDE compatibility. E.g., don't say "Adds support to IntelliJ IDEA for..."
+      Displayed in the "Plugins" settings dialog and the plugin repository Web interface.
+      Simple HTML elements can be included between <![CDATA[  ]]> tags.  -->
     <description><![CDATA[
         <p>
           Automatically set the jira issue key (of the current branch name) as prefix for the commit message<br>
@@ -46,6 +73,17 @@
         </table>
     ]]></description>
 
+    <!-- Description of changes in the latest version of the plugin.
+     Displayed in the "Plugins" settings dialog and the plugin repository Web interface.
+     Simple HTML elements can be included between <![CDATA[  ]]> tags.  -->
+<!--    <change-notes>Initial release of the plugin.</change-notes>-->
+
+    <!-- Mandatory dependencies on plugins or modules.
+     The FQN module names in <depends> elements are used to determine IDE compatibility for the plugin.
+     Include at least the module shown below to indicate compatibility with IntelliJ Platform-based products.
+     Also, include dependencies on other plugins as needed.
+     See "Compatibility with Multiple Products" and "Plugin Dependencies" for more information.  -->
+
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
@@ -54,7 +92,12 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
         <vcsCheckinHandlerFactory implementation="be.filip.intellij.GitBaseCheckinHandlerFactory" />
-        <applicationConfigurable groupId="tools" instance="be.filip.intellij.settings.PluginSettingsConfigurable"></applicationConfigurable>
+
+        <applicationService serviceImplementation="be.filip.intellij.settings.PluginSettings"/>
+
+        <applicationConfigurable parentId="tools" instance="be.filip.intellij.settings.PluginSettingsConfigurable"
+                                 id="be.filip.intellij.settings.PluginSettingsConfigurable"
+                                 displayName="Git Auto Prefix Filip"/>
     </extensions>
 
     <actions>

@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.BranchChangeListener;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
+import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
@@ -14,6 +15,7 @@ import git4idea.GitLocalBranch;
 import git4idea.branch.GitBranchUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import com.intellij.openapi.diagnostic.Logger;
 
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -24,13 +26,28 @@ public class CommitPrefixCheckinHandler extends CheckinHandler implements Branch
     private final Logger log = Logger.getInstance(getClass());
     private CheckinProjectPanel panel;
     private static final Pattern branchNamePattern = Pattern.compile("(?<=\\/)*([A-Z0-9]+-[0-9]+)");
+
+    // UPM-8745
     private static final Pattern prefixPattern = Pattern.compile("[A-Z0-9]+-[0-9]+");
+
+    //fve: UPM-8745
+    private static final Pattern prefixPattern2 = Pattern.compile("[a-zA-Z]+..[A-Z0-9]+-[0-9]+");
 
 
     private String newCommitMessage;
 
 
-    public CommitPrefixCheckinHandler(CheckinProjectPanel panel) {
+//    public CommitPrefixCheckinHandler(CheckinProjectPanel panel) {
+//        this.panel = panel;
+//
+//        MessageBusConnection connect = panel.getProject().getMessageBus().connect();
+//        connect.subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, this);
+//
+//        //Sets the new message on the new commit UI
+//        updateCommitMessage();
+//    }
+
+    public CommitPrefixCheckinHandler(CheckinProjectPanel panel, CommitContext commitContext) {
         this.panel = panel;
 
         MessageBusConnection connect = panel.getProject().getMessageBus().connect();
@@ -61,7 +78,21 @@ public class CommitPrefixCheckinHandler extends CheckinHandler implements Branch
 
         if (jiraTicketName.isPresent()){
 
-            String newMessage = "fve: " + updatePrefix(jiraTicketName.get(), panel.getCommitMessage(), getCommitMessageDelimiter());
+//            String newMessage = updatePrefix(
+//                    jiraTicketName.get(),
+//                    panel.getCommitMessage(),
+//                    getCommitMessageDelimiter(),
+//                    getUserInitials()
+//            );
+            String newMessage = updatePrefix2(
+                    jiraTicketName.get(),
+                    panel.getCommitMessage(),
+                    getCommitMessageDelimiter(),
+                    getUserInitials(),
+                    log
+            );
+            log.warn("newMessage when jiraticketname is present : " + newMessage);
+//            String newMessage = "fve: " + updatePrefix(jiraTicketName.get(), panel.getCommitMessage(), getCommitMessageDelimiter());
 //            String newMessage = updatePrefix(jiraTicketName.get(), panel.getCommitMessage(), getCommitMessageDelimiter());
 
             //Sets the value for the new Panel UI
@@ -88,9 +119,32 @@ public class CommitPrefixCheckinHandler extends CheckinHandler implements Branch
         return input.substring(0,i+1);
     }
 
-    static String updatePrefix(String newPrefix, String currentMessage, String commitMessageDelimiter){
+//    static String updatePrefix(String newPrefix, String currentMessage, String commitMessageDelimiter){
+//        if (currentMessage == null || currentMessage.trim().isEmpty()){
+//            return newPrefix + commitMessageDelimiter;
+//        }
+//
+//        //If there is already a commit message with a matching prefix only replace the prefix
+//        Matcher matcher = prefixPattern.matcher(currentMessage);
+//        if (matcher.find() &&
+//                subString(currentMessage,0, matcher.start()).trim().isEmpty() &&
+//                (subString(currentMessage, matcher.end(), matcher.end() + commitMessageDelimiter.length()).equals(commitMessageDelimiter) ||
+//                        subString(currentMessage, matcher.end(), matcher.end() + commitMessageDelimiter.length()).equals(rTrim(commitMessageDelimiter)))
+//        ){
+//            String start = subString(currentMessage, 0, matcher.start());
+//            String end = subString(currentMessage, matcher.end() + commitMessageDelimiter.length());
+//
+//            return start + newPrefix + commitMessageDelimiter + end;
+//        }
+//
+//        return newPrefix + commitMessageDelimiter + currentMessage;
+//    }
+
+    static String updatePrefix(String newPrefix, String currentMessage, String commitMessageDelimiter, String userInitials){
+
         if (currentMessage == null || currentMessage.trim().isEmpty()){
-            return newPrefix + commitMessageDelimiter;
+//            return newPrefix + commitMessageDelimiter;
+            return userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter;
         }
 
         //If there is already a commit message with a matching prefix only replace the prefix
@@ -106,7 +160,59 @@ public class CommitPrefixCheckinHandler extends CheckinHandler implements Branch
             return start + newPrefix + commitMessageDelimiter + end;
         }
 
-        return newPrefix + commitMessageDelimiter + currentMessage;
+//        return newPrefix + commitMessageDelimiter + currentMessage;
+        return userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + currentMessage;
+    }
+
+    static String updatePrefix2(String newPrefix, String currentMessage, String commitMessageDelimiter, String userInitials, Logger log){
+        log.warn("updatePrefix2 function using.");
+
+        if (currentMessage == null || currentMessage.trim().isEmpty()){
+            return userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter;
+        }
+
+        //If there is already a commit message with a matching prefix only replace the prefix
+        Matcher matcher = prefixPattern.matcher(currentMessage);
+        log.warn("matcher is : " + matcher);
+        if (matcher.find() &&
+                subString(currentMessage,0, matcher.start()).trim().isEmpty() &&
+                (subString(currentMessage, matcher.end(), matcher.end() + commitMessageDelimiter.length()).equals(commitMessageDelimiter) ||
+                        subString(currentMessage, matcher.end(), matcher.end() + commitMessageDelimiter.length()).equals(rTrim(commitMessageDelimiter)))
+        ){
+            String start = subString(currentMessage, 0, matcher.start());
+            String end = subString(currentMessage, matcher.end() + commitMessageDelimiter.length());
+            log.warn("matcher start is inside if statement: " + start);
+            log.warn("matcher end is inside if statement: " + end);
+            log.warn("matcher currentMessage is inside if statement: " + currentMessage);
+            log.warn("matcher return old would be : " + start + newPrefix + commitMessageDelimiter + end);
+            log.warn("matcher return new would be : " + start + userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + end);
+
+            return start + userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + end;
+        } else{
+            log.warn("matcher nothing found!");
+        }
+
+        Matcher matcher2 = prefixPattern2.matcher(currentMessage);
+        log.warn("matcher2 is : " + matcher2);
+        if (matcher2.find() &&
+                subString(currentMessage,0, matcher2.start()).trim().isEmpty() &&
+                (subString(currentMessage, matcher2.end(), matcher2.end() + commitMessageDelimiter.length()).equals(commitMessageDelimiter) ||
+                        subString(currentMessage, matcher2.end(), matcher2.end() + commitMessageDelimiter.length()).equals(rTrim(commitMessageDelimiter)))
+        ){
+            String start = subString(currentMessage, 0, matcher2.start());
+            String end = subString(currentMessage, matcher2.end() + commitMessageDelimiter.length());
+            log.warn("matcher2 start is inside if statement: " + start);
+            log.warn("matcher2 end is inside if statement: " + end);
+            log.warn("matcher2 currentMessage is inside if statement: " + currentMessage);
+            log.warn("matcher2 return old would be : " + start + newPrefix + commitMessageDelimiter + end);
+            log.warn("matcher2 return new would be : " + start + userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + end);
+
+            return start + userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + end;
+        } else {
+            log.warn("matcher2 nothing found!");
+        }
+
+        return userInitials + commitMessageDelimiter + newPrefix + commitMessageDelimiter + currentMessage;
     }
 
     static String subString(String string, int start){
@@ -133,6 +239,19 @@ public class CommitPrefixCheckinHandler extends CheckinHandler implements Branch
 
     String getCommitMessageDelimiter() {
         return PluginSettings.getInstance().getCommitMessageDelimiter();
+    }
+
+    String getUserInitials() {
+        return PluginSettings.getInstance().getUserInitials();
+    }
+
+    /**
+     * TODO implement a way so that the commit message becomes:
+     *      NAME - ticketNR => when true
+     *      TICKETNR - NAME => when false
+     */
+    boolean getCheckOrder() {
+        return PluginSettings.getInstance().isCommitOrderTicketuserInitials();
     }
 
     private String extractBranchName() {
